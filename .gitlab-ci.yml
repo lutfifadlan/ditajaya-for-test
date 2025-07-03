@@ -1,0 +1,31 @@
+stages:
+  - deploy
+
+deploy_production:
+  stage: deploy
+  only:
+    - main
+  script:
+    - "which ssh-agent || ( apt-get update -y && apt-get install openssh-client -y )"
+    - eval $(ssh-agent -s)
+    - echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add -
+    - mkdir -p ~/.ssh
+    - chmod 700 ~/.ssh
+    - ssh-keyscan -H "$SSH_HOST" >> ~/.ssh/known_hosts
+    - |
+      echo "Deploying to /var/www/ditajaya/ on $SSH_USER@$SSH_HOST"
+      ssh "$SSH_USER@$SSH_HOST" << 'EOF'
+      echo "Current directory before cd:"
+      pwd
+      cd /var/www/ditajaya/
+      echo "Changed to: /var/www/ditajaya/"
+      pwd
+      ls -la
+      git pull origin main
+      composer install --no-dev --optimize-autoloader
+      php artisan migrate --force
+      php artisan config:cache
+      php artisan route:cache
+      php artisan view:cache
+      php artisan queue:restart
+      EOF
