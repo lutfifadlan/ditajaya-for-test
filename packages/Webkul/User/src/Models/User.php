@@ -87,6 +87,14 @@ class User extends Authenticatable implements UserContract
     }
 
     /**
+     * Get the persons for the user.
+     */
+    public function persons()
+    {
+        return $this->hasMany(\Webkul\Contact\Models\PersonProxy::modelClass());
+    }
+
+    /**
      * Checks if user has permission to perform certain action.
      *
      * @param  string  $permission

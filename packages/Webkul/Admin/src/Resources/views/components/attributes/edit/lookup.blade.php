@@ -171,21 +171,43 @@
 
                     if (this.showPopup) {
                         this.$nextTick(() => this.$refs.searchInput.focus());
+                        
+                        // Load all items when dropdown opens
+                        if (this.searchedResults.length === 0 && this.searchTerm === '') {
+                            this.loadAllItems();
+                        }
                     }
                 },
 
                 search() {
-                    if (this.searchTerm.length <= 2) {
-                        this.searchedResults = [];
-
+                    // If search term is empty, show all items
+                    if (this.searchTerm === '') {
+                        this.loadAllItems();
                         return;
                     }
 
+                    // For non-empty search, search immediately (no minimum length)
                     this.isSearching = true;
 
                     this.$axios.get(this.searchRoute, {
                             params: {
                                 query: this.searchTerm
+                            }
+                        })
+                        .then(response => {
+                            this.searchedResults = response.data;
+                        })
+                        .catch(error => {})
+                        .finally(() => this.isSearching = false);
+                },
+
+                loadAllItems() {
+                    this.isSearching = true;
+
+                    // Load all items by passing empty query
+                    this.$axios.get(this.searchRoute, {
+                            params: {
+                                query: ''
                             }
                         })
                         .then(response => {
