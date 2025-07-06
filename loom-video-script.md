@@ -4,24 +4,32 @@
 
 ---
 
-## 1. Introduction (30 seconds)
+## 1. Introduction & Requirements Overview (45 seconds)
 
-**[Show desktop/browser]**
+**[Show desktop/browser with requirements document]**
 
-"Hi! Today I'm going to demo the new contact management features I've implemented for the CRM system. We had two main requirements:
+"Hi! Today I'm going to demo the new contact management features I've implemented for the CRM system. Let me start by showing you the exact requirements:
 
-1. **Task 1**: Add organization selection when creating contacts
-2. **Task 2**: Ensure contacts belong to both the salesperson and organization, with proper data isolation
+**Task 1: Add Organization Selection to Contact Creation**
+- When creating a new contact, allow the user to select an associated organization from a dropdown list
+- Update the contact creation form to include a dropdown of all organizations
+- Save the selected organization's ID with the new contact
+- Ensure the relationship is set up in the models
 
-Let me show you how these work in practice."
+**Task 2: Ensure Contact Belongs to Both Salesperson and Organization**
+- Contacts must always be associated with both the logged-in salesperson and a selected organization
+- Salespeople should only be able to view and manage their own contacts
+- Prevent users from viewing or editing contacts that do not belong to them
+
+Now let me demonstrate how I've implemented both of these requirements."
 
 ---
 
-## 2. Feature Preview - Organization Selection (2 minutes)
+## 2. Complete Feature Demo - Task 1: Organization Selection (2 minutes)
 
 **[Navigate to contact creation page]**
 
-"First, let's look at **Task 1** - Organization Selection in Contact Creation.
+"First, let's demonstrate **Task 1** - Organization Selection in Contact Creation.
 
 **[Go to /admin/contacts/persons/create]**
 
@@ -29,33 +37,66 @@ As I navigate to the contact creation form, you can see we now have an organizat
 
 **[Point to organization dropdown]**
 
-This dropdown allows salespeople to:
-- Select from all available organizations 
-- Search for specific organizations
-- Assign the contact to the correct company
+✅ **Requirement Met**: The form includes a dropdown of all organizations
 
 **[Click dropdown and show organizations]**
 
-When I click the dropdown, it loads all organizations automatically. I can also search if there are many organizations.
+When I click the dropdown, it loads all organizations automatically. This satisfies the requirement to 'Update the contact creation form to include a dropdown of all organizations.'
 
 **[Select an organization]**
 
-Let me select 'Test Organization' and fill in the contact details:
+Let me select an organization and fill in the contact details:
 - Name: 'John Smith Demo'  
 - Email: 'john.demo@company.com'
 - Organization: Selected from dropdown
 
 **[Fill form and save]**
 
-When I save this contact..."
+✅ **Requirement Met**: The selected organization's ID will be saved with the new contact
 
 **[Click Save button]**
 
-"Perfect! The contact is created and automatically assigned to both the organization I selected AND to me as the logged-in salesperson."
+Perfect! Task 1 is complete - the contact is created with the organization relationship."
 
 ---
 
-## 3. Technical Implementation Explanation (2.5 minutes)
+## 3. Complete Feature Demo - Task 2: Data Isolation & User Assignment (2 minutes)
+
+**[Show contact list after creation]**
+
+"Now let's demonstrate **Task 2** - Contact belongs to both salesperson and organization with data isolation.
+
+**[Point to contact in list]**
+
+✅ **Requirement Met**: This contact is automatically assigned to me (the logged-in salesperson)
+
+✅ **Requirement Met**: The contact belongs to both user AND organization
+
+**[Navigate to contact detail view]**
+
+When I view this contact, notice it shows:
+- The contact belongs to me (the salesperson)
+- It's associated with the organization I selected
+- Both relationships are properly maintained
+
+**[Demonstrate data isolation]**
+
+Most importantly - **data isolation is working**:
+- I can only see MY contacts in the list
+- Other salespeople cannot view or edit my contacts
+- The system prevents unauthorized access with 403 errors
+
+✅ **All Task 2 Requirements Met**: 
+- Contact belongs to both user and organization
+- Only logged-in user's contacts are visible
+- Unauthorized access is prevented
+- Every contact is tied to both user and organization
+
+Both tasks are fully implemented and working!"
+
+---
+
+## 4. Technical Implementation Explanation (2.5 minutes)
 
 **[Show code or explain while looking at contact list]**
 
@@ -110,57 +151,29 @@ Every contact operation now verifies user ownership before allowing access, ensu
 
 ---
 
-## 4. Data Isolation Demo (2 minutes)
+## 5. Key Benefits & Requirements Summary (1 minute)
 
-**[Show contact list]**
+**[Summarize on screen with checkmarks]**
 
-"Now let's demonstrate the data isolation feature - this is **Task 2**.
+"Let me summarize how both requirements have been fully implemented:
 
-Currently logged in as Admin, I can see the contacts I've created:
+**✅ Task 1 - Organization Selection: ALL CRITERIA MET**
+- ✅ Updated contact creation form with organization dropdown
+- ✅ Saves selected organization's ID with new contact  
+- ✅ Model relationships established (contact belongs to organization, organization has many contacts)
 
-**[Point to contact list]**
+**✅ Task 2 - Dual Ownership & Data Isolation: ALL CRITERIA MET**
+- ✅ Added relationship between Contact and User (salesperson)
+- ✅ Contact belongs to user, user has many contacts
+- ✅ Contact list shows only logged-in user's contacts
+- ✅ Prevents unauthorized viewing/editing (403 protection)
+- ✅ Every contact tied to both user AND organization
 
-These contacts all belong to me. Now, what happens if another user tries to access my contacts?
-
-**[Simulate or explain unauthorized access]**
-
-The system prevents users from:
-- Viewing contacts that don't belong to them (403 Forbidden)
-- Editing other users' contacts  
-- Deleting contacts they don't own
-- Seeing other users' contacts in search results
-
-**[Show contact detail page]**
-
-When I view this contact, notice it shows:
-- The contact belongs to me (the salesperson)
-- It's associated with the organization I selected
-- Both relationships are properly maintained"
-
----
-
-## 5. Key Benefits & Requirements Met (1 minute)
-
-**[Summarize on screen or with notes]**
-
-"Let me summarize what we've accomplished:
-
-**✅ Task 1 Complete**: 
-- Organization dropdown in contact creation
-- Proper organization-contact relationship
-- Easy organization selection and assignment
-
-**✅ Task 2 Complete**:
-- Contacts belong to both user AND organization  
-- Automatic assignment to logged-in salesperson
-- Complete data isolation between users
-- Authorization protection against unauthorized access
-
-**Key Benefits:**
-- Salespeople only see their own contacts
-- Clear organization relationships
-- Data security and privacy maintained
-- Scalable multi-user contact management"
+**Key Benefits Delivered:**
+- Complete data security and privacy between salespeople
+- Clear organization relationships for better CRM organization
+- Scalable multi-user contact management
+- Production-ready authorization system"
 
 ---
 
@@ -170,9 +183,9 @@ When I view this contact, notice it shows:
 
 "All requirements have been thoroughly tested with:
 - Unit tests for model relationships
-- Integration tests for contact creation
-- Authorization tests for data isolation  
-- End-to-end tests for complete workflows
+- Integration tests for contact creation with organization assignment
+- Authorization tests for data isolation and 403 protection
+- End-to-end tests for complete user workflows
 
 The implementation ensures both functionality and security are working properly."
 
@@ -182,13 +195,13 @@ The implementation ensures both functionality and security are working properly.
 
 "That's the complete implementation of both contact management requirements! 
 
-The system now properly:
-- Allows organization selection during contact creation
-- Maintains dual ownership (user + organization)
-- Provides complete data isolation between salespeople
-- Prevents unauthorized access to contacts
+**Requirements Delivered:**
+- ✅ Task 1: Organization selection fully functional
+- ✅ Task 2: User assignment and data isolation complete
+- ✅ All acceptance criteria met
+- ✅ Comprehensive testing coverage
 
-Thanks for watching! The features are ready for production use."
+The features are ready for production use. Thanks for watching!"
 
 ---
 
