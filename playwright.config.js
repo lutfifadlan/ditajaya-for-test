@@ -43,6 +43,6 @@ export default defineConfig({
   webServer: {
     command: 'php artisan serve',
     port: 8000,
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: true, // Always reuse existing server
   },
 });
