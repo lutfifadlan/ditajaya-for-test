@@ -17,6 +17,16 @@ class Person extends Model implements PersonContract
     use CustomAttribute, HasFactory, LogsActivity;
 
     /**
+     * Create a new factory instance for the model.
+     *
+     * @return \Illuminate\Database\Eloquent\Factories\Factory
+     */
+    protected static function newFactory()
+    {
+        return \Database\Factories\PersonFactory::new();
+    }
+
+    /**
      * Table name.
      *
      * @var string
@@ -86,15 +96,5 @@ class Person extends Model implements PersonContract
     public function tags()
     {
         return $this->belongsToMany(TagProxy::modelClass(), 'person_tags');
-    }
-
-    /**
-     * Create a new factory instance for the model.
-     *
-     * @return \Illuminate\Database\Eloquent\Factories\Factory
-     */
-    protected static function newFactory()
-    {
-        return PersonFactory::new();
     }
 }

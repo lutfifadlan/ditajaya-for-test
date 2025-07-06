@@ -2,6 +2,7 @@
 
 namespace Webkul\User\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Facades\Storage;
@@ -10,7 +11,7 @@ use Webkul\User\Contracts\User as UserContract;
 
 class User extends Authenticatable implements UserContract
 {
-    use HasApiTokens, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -87,6 +88,22 @@ class User extends Authenticatable implements UserContract
     }
 
     /**
+     * The roles that belong to the user (alias for role for compatibility).
+     */
+    public function roles()
+    {
+        return $this->belongsToMany(RoleProxy::modelClass(), 'user_roles', 'user_id', 'role_id');
+    }
+
+    /**
+     * Get the persons for the user.
+     */
+    public function persons()
+    {
+        return $this->hasMany(\Webkul\Contact\Models\PersonProxy::modelClass());
+    }
+
+    /**
      * Checks if user has permission to perform certain action.
      *
      * @param  string  $permission
@@ -99,5 +116,15 @@ class User extends Authenticatable implements UserContract
         }
 
         return in_array($permission, $this->role->permissions);
+    }
+
+    /**
+     * Create a new factory instance for the model.
+     *
+     * @return \Illuminate\Database\Eloquent\Factories\Factory
+     */
+    protected static function newFactory()
+    {
+        return \Database\Factories\UserFactory::new();
     }
 }

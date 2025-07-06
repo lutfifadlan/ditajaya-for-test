@@ -55,7 +55,12 @@ class PersonController extends Controller
     {
         Event::dispatch('contacts.person.create.before');
 
-        $person = $this->personRepository->create($this->sanitizeRequestedPersonData($request->all()));
+        $data = $this->sanitizeRequestedPersonData($request->all());
+        
+        // Always assign the current user as the owner
+        $data['user_id'] = auth()->user()->id;
+
+        $person = $this->personRepository->create($data);
 
         Event::dispatch('contacts.person.create.after', $person);
 
@@ -77,6 +82,13 @@ class PersonController extends Controller
     public function show(int $id): View
     {
         $person = $this->personRepository->findOrFail($id);
+        
+        // Check if user has permission to view this person
+        if ($userIds = bouncer()->getAuthorizedUserIds()) {
+            if (!in_array($person->user_id, $userIds)) {
+                abort(403, 'Unauthorized access to this contact.');
+            }
+        }
 
         return view('admin::contacts.persons.view', compact('person'));
     }
@@ -87,6 +99,13 @@ class PersonController extends Controller
     public function edit(int $id): View
     {
         $person = $this->personRepository->findOrFail($id);
+        
+        // Check if user has permission to edit this person
+        if ($userIds = bouncer()->getAuthorizedUserIds()) {
+            if (!in_array($person->user_id, $userIds)) {
+                abort(403, 'Unauthorized access to this contact.');
+            }
+        }
 
         return view('admin::contacts.persons.edit', compact('person'));
     }
@@ -96,9 +115,23 @@ class PersonController extends Controller
      */
     public function update(AttributeForm $request, int $id): RedirectResponse|JsonResponse
     {
+        $person = $this->personRepository->findOrFail($id);
+        
+        // Check if user has permission to update this person
+        if ($userIds = bouncer()->getAuthorizedUserIds()) {
+            if (!in_array($person->user_id, $userIds)) {
+                abort(403, 'Unauthorized access to this contact.');
+            }
+        }
+
         Event::dispatch('contacts.person.update.before', $id);
 
-        $person = $this->personRepository->update($this->sanitizeRequestedPersonData($request->all()), $id);
+        $data = $this->sanitizeRequestedPersonData($request->all());
+        
+        // Preserve the original user_id to prevent ownership changes
+        $data['user_id'] = $person->user_id;
+
+        $person = $this->personRepository->update($data, $id);
 
         Event::dispatch('contacts.person.update.after', $person);
 
@@ -139,6 +172,15 @@ class PersonController extends Controller
     public function destroy(int $id): JsonResponse
     {
         $person = $this->personRepository->findOrFail($id);
+        
+        // Check if user has permission to delete this person
+        if ($userIds = bouncer()->getAuthorizedUserIds()) {
+            if (!in_array($person->user_id, $userIds)) {
+                return response()->json([
+                    'message' => 'Unauthorized access to this contact.',
+                ], 403);
+            }
+        }
 
         try {
             Event::dispatch('contacts.person.delete.before', $id);
@@ -163,6 +205,17 @@ class PersonController extends Controller
     public function massDestroy(MassDestroyRequest $massDestroyRequest): JsonResponse
     {
         $persons = $this->personRepository->findWhereIn('id', $massDestroyRequest->input('indices'));
+        
+        // Check if user has permission to delete these persons
+        if ($userIds = bouncer()->getAuthorizedUserIds()) {
+            foreach ($persons as $person) {
+                if (!in_array($person->user_id, $userIds)) {
+                    return response()->json([
+                        'message' => 'Unauthorized access to some contacts.',
+                    ], 403);
+                }
+            }
+        }
 
         foreach ($persons as $person) {
             Event::dispatch('contact.person.delete.before', $person);
