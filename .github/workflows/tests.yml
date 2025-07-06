@@ -116,6 +116,26 @@ jobs:
 
     - name: Seed Database
       run: php artisan db:seed --force
+      
+    - name: Verify admin user exists
+      run: |
+        php artisan tinker --execute="
+        \$user = \Webkul\User\Models\User::where('email', 'admin@example.com')->first();
+        if (!\$user) {
+          echo 'Creating admin user...';
+          \Webkul\User\Models\User::create([
+            'name' => 'Example Admin',
+            'email' => 'admin@example.com',
+            'password' => bcrypt('admin123'),
+            'role_id' => 1,
+            'status' => 1,
+            'view_permission' => 'global'
+          ]);
+          echo 'Admin user created successfully';
+        } else {
+          echo 'Admin user already exists: ' . \$user->email;
+        }
+        "
 
     - name: Install Playwright Browsers
       run: npx playwright install --with-deps chromium
@@ -130,7 +150,7 @@ jobs:
         curl -f http://localhost:8000 || echo "Server check failed but continuing..."
 
     - name: Run E2E Tests
-      run: npx playwright test --project=chromium
+      run: npx playwright test --project=chromium --workers=2
       env:
         CI: true
 
