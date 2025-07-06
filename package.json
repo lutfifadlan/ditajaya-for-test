@@ -3,7 +3,14 @@
     "type": "module",
     "scripts": {
         "dev": "vite",
-        "build": "vite build"
+        "build": "vite build",
+        "test:e2e": "playwright test",
+        "test:e2e:headed": "playwright test --headed",
+        "test:e2e:debug": "playwright test --debug",
+        "test:e2e:report": "playwright show-report",
+        "test:parallel": "playwright test --workers=4",
+        "test:unit": "./vendor/bin/pest",
+        "test:all": "npm run test:unit && npm run test:e2e"
     },
     "devDependencies": {
         "@playwright/test": "^1.53.2",
