@@ -29,3 +29,4 @@ yarn-error.log
 playwright-report/
 test-results/
 .phpunit.cache/
+.DS_Store
