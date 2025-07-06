@@ -9,7 +9,7 @@ export default defineConfig({
   fullyParallel: true, // Enable parallel execution
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 1, // Add retries for stability
-  workers: process.env.CI ? 2 : '50%', // Use 2 workers in CI for parallel execution, 50% of CPU cores locally
+  workers: process.env.CI ? 1 : '50%', // Use 1 worker in CI for stability, 50% of CPU cores locally
   reporter: [['html'], ['line']], // Multiple reporters
   
   use: {
