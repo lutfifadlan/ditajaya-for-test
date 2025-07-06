@@ -23,6 +23,7 @@ class OrganizationFactory extends Factory
     {
         return [
             'name' => $this->faker->company(),
+            'user_id' => 1,
             'created_at' => now(),
             'updated_at' => now(),
         ];

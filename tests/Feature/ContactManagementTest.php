@@ -20,9 +20,9 @@ class ContactManagementTest extends TestCase
     {
         parent::setUp();
         
-        // Create admin user
+        // Create admin user with unique email
         $this->admin = User::factory()->create([
-            'email' => 'admin@example.com',
+            'email' => 'admin-' . uniqid() . '@example.com',
             'password' => bcrypt('admin123'),
         ]);
         
@@ -40,41 +40,45 @@ class ContactManagementTest extends TestCase
      */
     protected function seedAttributes()
     {
-        // Create name attribute
-        Attribute::create([
-            'code' => 'name',
-            'name' => 'Name',
-            'type' => 'text',
-            'entity_type' => 'persons',
-            'is_required' => 1,
-            'is_unique' => 0,
-            'validation' => 'required',
-            'sort_order' => 1,
-        ]);
+        // Only create attributes if they don't exist
+        if (!Attribute::where('code', 'name')->where('entity_type', 'persons')->exists()) {
+            Attribute::create([
+                'code' => 'name',
+                'name' => 'Name',
+                'type' => 'text',
+                'entity_type' => 'persons',
+                'is_required' => 1,
+                'is_unique' => 0,
+                'validation' => 'required',
+                'sort_order' => 1,
+            ]);
+        }
         
-        // Create email attribute
-        Attribute::create([
-            'code' => 'emails',
-            'name' => 'Emails',
-            'type' => 'email',
-            'entity_type' => 'persons',
-            'is_required' => 0,
-            'is_unique' => 1,
-            'validation' => 'email|unique:persons,emails',
-            'sort_order' => 2,
-        ]);
+        if (!Attribute::where('code', 'emails')->where('entity_type', 'persons')->exists()) {
+            Attribute::create([
+                'code' => 'emails',
+                'name' => 'Emails',
+                'type' => 'email',
+                'entity_type' => 'persons',
+                'is_required' => 0,
+                'is_unique' => 1,
+                'validation' => 'email|unique:persons,emails',
+                'sort_order' => 2,
+            ]);
+        }
         
-        // Create organization attribute
-        Attribute::create([
-            'code' => 'organization_id',
-            'name' => 'Organization',
-            'type' => 'lookup',
-            'entity_type' => 'persons',
-            'is_required' => 0,
-            'is_unique' => 0,
-            'lookup_type' => 'organizations',
-            'sort_order' => 3,
-        ]);
+        if (!Attribute::where('code', 'organization_id')->where('entity_type', 'persons')->exists()) {
+            Attribute::create([
+                'code' => 'organization_id',
+                'name' => 'Organization',
+                'type' => 'lookup',
+                'entity_type' => 'persons',
+                'is_required' => 0,
+                'is_unique' => 0,
+                'lookup_type' => 'organizations',
+                'sort_order' => 3,
+            ]);
+        }
     }
 
     /**
@@ -84,7 +88,7 @@ class ContactManagementTest extends TestCase
      */
     public function test_contact_creation_with_organization()
     {
-        $this->actingAs($this->admin, 'admin');
+        $this->actingAs($this->admin, 'user');
         
         $contactData = [
             'name' => 'Test Contact',
@@ -113,7 +117,7 @@ class ContactManagementTest extends TestCase
      */
     public function test_contact_automatically_assigned_to_logged_in_user()
     {
-        $this->actingAs($this->admin, 'admin');
+        $this->actingAs($this->admin, 'user');
         
         $contactData = [
             'name' => 'Auto Assigned Contact',
@@ -140,7 +144,7 @@ class ContactManagementTest extends TestCase
      */
     public function test_contact_belongs_to_both_user_and_organization()
     {
-        $this->actingAs($this->admin, 'admin');
+        $this->actingAs($this->admin, 'user');
         
         $contactData = [
             'name' => 'Dual Ownership Contact',
@@ -170,7 +174,7 @@ class ContactManagementTest extends TestCase
      */
     public function test_user_cannot_change_ownership_during_update()
     {
-        $this->actingAs($this->admin, 'admin');
+        $this->actingAs($this->admin, 'user');
         
         // Create a contact
         $person = Person::factory()->create([

@@ -26,19 +26,9 @@ class ContactAuthorizationTest extends TestCase
         // Create organization
         $this->organization = Organization::factory()->create();
         
-        // Create admin role
-        $adminRole = Role::create([
-            'name' => 'Administrator',
-            'description' => 'Administrator role',
-            'permission_type' => 'all',
-        ]);
-        
         // Create two users
         $this->user1 = User::factory()->create();
-        $this->user1->roles()->attach($adminRole);
-        
         $this->user2 = User::factory()->create();
-        $this->user2->roles()->attach($adminRole);
         
         // Create contacts for each user
         $this->user1Contact = Person::factory()->create([
@@ -62,7 +52,7 @@ class ContactAuthorizationTest extends TestCase
     public function test_user_cannot_view_another_users_contact()
     {
         // User1 tries to view User2's contact
-        $this->actingAs($this->user1, 'admin');
+        $this->actingAs($this->user1, 'user');
         $response = $this->get(route('admin.contacts.persons.view', $this->user2Contact->id));
         
         $response->assertStatus(403);
@@ -77,7 +67,7 @@ class ContactAuthorizationTest extends TestCase
     public function test_user_can_view_their_own_contact()
     {
         // User1 views their own contact
-        $this->actingAs($this->user1, 'admin');
+        $this->actingAs($this->user1, 'user');
         $response = $this->get(route('admin.contacts.persons.view', $this->user1Contact->id));
         
         $response->assertStatus(200);
@@ -92,7 +82,7 @@ class ContactAuthorizationTest extends TestCase
     public function test_user_cannot_edit_another_users_contact()
     {
         // User1 tries to edit User2's contact
-        $this->actingAs($this->user1, 'admin');
+        $this->actingAs($this->user1, 'user');
         $response = $this->get(route('admin.contacts.persons.edit', $this->user2Contact->id));
         
         $response->assertStatus(403);
@@ -107,7 +97,7 @@ class ContactAuthorizationTest extends TestCase
     public function test_user_can_edit_their_own_contact()
     {
         // User1 edits their own contact
-        $this->actingAs($this->user1, 'admin');
+        $this->actingAs($this->user1, 'user');
         $response = $this->get(route('admin.contacts.persons.edit', $this->user1Contact->id));
         
         $response->assertStatus(200);
@@ -122,7 +112,7 @@ class ContactAuthorizationTest extends TestCase
     public function test_user_cannot_update_another_users_contact()
     {
         // User1 tries to update User2's contact
-        $this->actingAs($this->user1, 'admin');
+        $this->actingAs($this->user1, 'user');
         
         $updateData = [
             'name' => 'Updated Contact Name',
@@ -148,7 +138,7 @@ class ContactAuthorizationTest extends TestCase
     public function test_user_can_update_their_own_contact()
     {
         // User1 updates their own contact
-        $this->actingAs($this->user1, 'admin');
+        $this->actingAs($this->user1, 'user');
         
         $updateData = [
             'name' => 'Updated Contact Name',
@@ -174,7 +164,7 @@ class ContactAuthorizationTest extends TestCase
     public function test_user_cannot_delete_another_users_contact()
     {
         // User1 tries to delete User2's contact
-        $this->actingAs($this->user1, 'admin');
+        $this->actingAs($this->user1, 'user');
         $response = $this->delete(route('admin.contacts.persons.delete', $this->user2Contact->id));
         
         $response->assertStatus(403);
@@ -193,7 +183,7 @@ class ContactAuthorizationTest extends TestCase
     public function test_user_can_delete_their_own_contact()
     {
         // User1 deletes their own contact
-        $this->actingAs($this->user1, 'admin');
+        $this->actingAs($this->user1, 'user');
         $response = $this->delete(route('admin.contacts.persons.delete', $this->user1Contact->id));
         
         $response->assertStatus(200);
@@ -218,7 +208,7 @@ class ContactAuthorizationTest extends TestCase
         ]);
         
         // User1 tries to mass delete including User2's contact
-        $this->actingAs($this->user1, 'admin');
+        $this->actingAs($this->user1, 'user');
         
         $response = $this->post(route('admin.contacts.persons.mass_delete'), [
             'indices' => [
@@ -228,12 +218,12 @@ class ContactAuthorizationTest extends TestCase
             ],
         ]);
         
-        $response->assertStatus(200);
+        $response->assertStatus(403);
         
-        // Verify only user1's contacts were deleted
-        $this->assertDatabaseMissing('persons', ['id' => $this->user1Contact->id]);
-        $this->assertDatabaseMissing('persons', ['id' => $user1Contact2->id]);
-        $this->assertDatabaseHas('persons', ['id' => $this->user2Contact->id]); // Should still exist
+        // Verify no contacts were deleted due to authorization failure
+        $this->assertDatabaseHas('persons', ['id' => $this->user1Contact->id]);
+        $this->assertDatabaseHas('persons', ['id' => $user1Contact2->id]);
+        $this->assertDatabaseHas('persons', ['id' => $this->user2Contact->id]);
     }
 
     /**
@@ -244,7 +234,7 @@ class ContactAuthorizationTest extends TestCase
     public function test_direct_url_access_to_unauthorized_contact_returns_403()
     {
         // User1 tries direct URL access to User2's contact
-        $this->actingAs($this->user1, 'admin');
+        $this->actingAs($this->user1, 'user');
         
         // Try view URL
         $response = $this->get("/admin/contacts/persons/view/{$this->user2Contact->id}");

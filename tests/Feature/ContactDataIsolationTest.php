@@ -24,19 +24,9 @@ class ContactDataIsolationTest extends TestCase
         // Create organization
         $this->organization = Organization::factory()->create();
         
-        // Create admin role
-        $adminRole = Role::create([
-            'name' => 'Administrator',
-            'description' => 'Administrator role',
-            'permission_type' => 'all',
-        ]);
-        
-        // Create two users with admin role
+        // Create two users
         $this->user1 = User::factory()->create();
-        $this->user1->roles()->attach($adminRole);
-        
         $this->user2 = User::factory()->create();
-        $this->user2->roles()->attach($adminRole);
     }
 
     /**
@@ -64,22 +54,36 @@ class ContactDataIsolationTest extends TestCase
         ]);
         
         // Test user1 sees only their contacts
-        $this->actingAs($this->user1, 'admin');
-        $response = $this->get(route('admin.contacts.persons.index'));
+        $this->actingAs($this->user1, 'user');
+        $response = $this->json('GET', route('admin.contacts.persons.index'), [], [
+            'X-Requested-With' => 'XMLHttpRequest',
+        ]);
         
         $response->assertStatus(200);
-        $response->assertSee($user1Contact1->name);
-        $response->assertSee($user1Contact2->name);
-        $response->assertDontSee($user2Contact1->name);
+        $responseData = $response->json();
+        
+        // Verify user1 sees only their own contacts
+        $this->assertCount(2, $responseData['records']);
+        $contactNames = collect($responseData['records'])->pluck('person_name')->toArray();
+        $this->assertContains($user1Contact1->name, $contactNames);
+        $this->assertContains($user1Contact2->name, $contactNames);
+        $this->assertNotContains($user2Contact1->name, $contactNames);
         
         // Test user2 sees only their contacts
-        $this->actingAs($this->user2, 'admin');
-        $response = $this->get(route('admin.contacts.persons.index'));
+        $this->actingAs($this->user2, 'user');
+        $response = $this->json('GET', route('admin.contacts.persons.index'), [], [
+            'X-Requested-With' => 'XMLHttpRequest',
+        ]);
         
         $response->assertStatus(200);
-        $response->assertSee($user2Contact1->name);
-        $response->assertDontSee($user1Contact1->name);
-        $response->assertDontSee($user1Contact2->name);
+        $responseData = $response->json();
+        
+        // Verify user2 sees only their own contacts
+        $this->assertCount(1, $responseData['records']);
+        $contactNames = collect($responseData['records'])->pluck('person_name')->toArray();
+        $this->assertContains($user2Contact1->name, $contactNames);
+        $this->assertNotContains($user1Contact1->name, $contactNames);
+        $this->assertNotContains($user1Contact2->name, $contactNames);
     }
 
     /**
@@ -103,7 +107,7 @@ class ContactDataIsolationTest extends TestCase
         ]);
         
         // User1 searches for "John"
-        $this->actingAs($this->user1, 'admin');
+        $this->actingAs($this->user1, 'user');
         $response = $this->get(route('admin.contacts.persons.search') . '?query=John');
         
         $response->assertStatus(200);
@@ -114,7 +118,7 @@ class ContactDataIsolationTest extends TestCase
         $this->assertEquals($user1Contact->id, $responseData['data'][0]['id']);
         
         // User2 searches for "John"
-        $this->actingAs($this->user2, 'admin');
+        $this->actingAs($this->user2, 'user');
         $response = $this->get(route('admin.contacts.persons.search') . '?query=John');
         
         $response->assertStatus(200);
@@ -144,8 +148,10 @@ class ContactDataIsolationTest extends TestCase
         ]);
         
         // Test user1 data grid
-        $this->actingAs($this->user1, 'admin');
-        $response = $this->get(route('admin.datagrid.api', ['src' => 'admin.contacts.persons.index']));
+        $this->actingAs($this->user1, 'user');
+        $response = $this->json('GET', route('admin.contacts.persons.index'), [], [
+            'X-Requested-With' => 'XMLHttpRequest',
+        ]);
         
         $response->assertStatus(200);
         $responseData = $response->json();
@@ -155,13 +161,15 @@ class ContactDataIsolationTest extends TestCase
         
         // All contacts should belong to user1
         foreach ($responseData['records'] as $record) {
-            $person = Person::find($record['person_id']);
+            $person = Person::find($record['id']);
             $this->assertEquals($this->user1->id, $person->user_id);
         }
         
         // Test user2 data grid
-        $this->actingAs($this->user2, 'admin');
-        $response = $this->get(route('admin.datagrid.api', ['src' => 'admin.contacts.persons.index']));
+        $this->actingAs($this->user2, 'user');
+        $response = $this->json('GET', route('admin.contacts.persons.index'), [], [
+            'X-Requested-With' => 'XMLHttpRequest',
+        ]);
         
         $response->assertStatus(200);
         $responseData = $response->json();
@@ -171,7 +179,7 @@ class ContactDataIsolationTest extends TestCase
         
         // All contacts should belong to user2
         foreach ($responseData['records'] as $record) {
-            $person = Person::find($record['person_id']);
+            $person = Person::find($record['id']);
             $this->assertEquals($this->user2->id, $person->user_id);
         }
     }
@@ -210,8 +218,10 @@ class ContactDataIsolationTest extends TestCase
         Person::factory()->count(2)->create(['user_id' => $this->user2->id]);
         
         // Superadmin should see all contacts
-        $this->actingAs($superAdmin, 'admin');
-        $response = $this->get(route('admin.datagrid.api', ['src' => 'admin.contacts.persons.index']));
+        $this->actingAs($superAdmin, 'user');
+        $response = $this->json('GET', route('admin.contacts.persons.index'), [], [
+            'X-Requested-With' => 'XMLHttpRequest',
+        ]);
         
         $response->assertStatus(200);
         $responseData = $response->json();

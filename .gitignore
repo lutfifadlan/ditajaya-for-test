@@ -29,3 +29,4 @@ yarn.lock
 yarn-error.log
 playwright-report/
 test-results/
+.phpunit.cache/
